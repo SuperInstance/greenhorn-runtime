@@ -1,0 +1,8 @@
+[package]
+name = "flux-vm"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "flux_vm_test"
+path = "src/main.rs"
