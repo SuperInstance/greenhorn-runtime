@@ -1,0 +1,22 @@
+# Greenhorn Runtime Configuration
+fleet:
+  owner: SuperInstance
+  discover_repos: true
+
+agent:
+  name: greenhorn
+  type: greenhorn
+  
+resources:
+  max_ram_mb: 512
+  max_cpu_cores: 1
+  max_disk_gb: 1
+
+git:
+  push_often: true
+  commit_prefix: "greenhorn: "
+
+tasks:
+  priority_order: [P0, P1, P2, P3, P4]
+  start_at: P3  # Greenhorns start at P3
+  max_concurrent: 1
