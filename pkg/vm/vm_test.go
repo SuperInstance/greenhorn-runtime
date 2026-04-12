@@ -264,33 +264,18 @@ func TestJnz(t *testing.T) {
 }
 
 func TestCallRet(t *testing.T) {
-	// MOVI R1, 10
-	// CALL +4 (skip next 4 bytes, push ret addr)
-	// INC R1 (skipped)
-	// HALT (skipped)
-	// INC R2 (at call target)
-	// RET
-	// INC R3 (after return)
-	// HALT
-	bc := EncodeMOVI(1, 10)              // 0-3
-	bc = append(bc, EncodeCALL(4)...)     // 4-7: CALL +4 -> target=8+4=12
-	bc = append(bc, EncodeB(0x08, 1)...) // 8-9: INC R1 (skipped)
-	bc = append(bc, 0x00)                // 10: HALT (skipped)
-	bc = append(bc, EncodeB(0x08, 2)...) // 11-12: this is actually 11... let me recalculate
-	// Actually: CALL at PC=4, instruction size=4, ret_addr=8
-	// CALL offset=4, target = 8+4 = 12
-	bc = make([]byte, 0)
+	// MOVI R1, 10; CALL to subroutine; subroutine: INC R2, RET; after ret: INC R3, HALT
+	bc := make([]byte, 0)
 	bc = append(bc, EncodeMOVI(1, 10)...)    // 0-3
 	bc = append(bc, EncodeCALL(8)...)        // 4-7: CALL +8, ret_addr=8, target=8+8=16
-	bc = append(bc, 0x00)                   // 8: HALT (not reached by main flow)
-	bc = append(bc, EncodeB(0x08, 1)...)    // 9-10: padding
-	bc = append(bc, EncodeB(0x08, 1)...)    // 11-12: padding  
+	bc = append(bc, EncodeB(0x08, 3)...)    // 8-9: INC R3 (executed after RET)
+	bc = append(bc, 0x00)                   // 10: HALT
+	bc = append(bc, EncodeB(0x08, 1)...)    // 11-12: padding
 	bc = append(bc, 0x00)                   // 13: padding
-	bc = append(bc, EncodeB(0x08, 2)...)    // 14-15: more padding
+	bc = append(bc, EncodeB(0x08, 1)...)    // 14-15: padding
 	bc = append(bc, EncodeB(0x08, 2)...)    // 16-17: INC R2 (call target)
 	bc = append(bc, 0x02)                   // 18: RET -> back to PC=8
-	bc = append(bc, EncodeB(0x08, 3)...)    // 19-20: INC R3
-	bc = append(bc, 0x00)                   // 21: HALT
+	bc = append(bc, 0x00)                   // 19: safety HALT
 	v := New(bc)
 	if err := v.Execute(); err != nil { t.Fatal(err) }
 	if v.Registers[1] != 10 { t.Errorf("R1 = %d, want 10", v.Registers[1]) }
@@ -379,10 +364,12 @@ func TestArithmeticOverflow(t *testing.T) {
 }
 
 func TestLoopCountdown(t *testing.T) {
-	// R1 = 5; loop: DEC R1; JNZ R1, -2; HALT
+	// R1 = 5; loop: DEC R1; JNZ R1, -6; HALT
+	// DEC is 2 bytes, JNZ is 4 bytes. After JNZ, PC is past both = +6 from DEC start.
+	// To get back to DEC, offset = -6.
 	bc := EncodeMOVI(1, 5)
-	bc = append(bc, EncodeB(0x09, 1)...)           // DEC R1
-	bc = append(bc, EncodeBranch(0x45, 1, -2)...) // JNZ R1, -2
+	bc = append(bc, EncodeB(0x09, 1)...)           // DEC R1 (2 bytes)
+	bc = append(bc, EncodeBranch(0x45, 1, -6)...) // JNZ R1, -6 (back to DEC)
 	bc = append(bc, 0x00)
 	v := New(bc)
 	if err := v.Execute(); err != nil { t.Fatal(err) }
