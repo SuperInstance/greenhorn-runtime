@@ -614,10 +614,10 @@ __global__ void flux_batch_execute(
             // ============================================================
 
             case OP_JZ:
-                // Jump if gp[rd] == 0
+                // Jump if gp[rd] == 0 (int8 offset to match Go VM)
                 if (__builtin_expect(valid_reg(rd), 1)) {
-                    int32_t offset = decode_imm16(rs, rt);
-                    if (__builtin_expect(gp[rd] == 0, 0)) {  // Hint: usually NOT taken
+                    int32_t offset = decode_imm8(rs);
+                    if (__builtin_expect(gp[rd] == 0, 0)) {
                         pc += offset;
                         branched = 1;
                     }
@@ -627,10 +627,10 @@ __global__ void flux_batch_execute(
                 break;
 
             case OP_JNZ:
-                // Jump if gp[rd] != 0
+                // Jump if gp[rd] != 0 (int8 offset to match Go VM)
                 if (__builtin_expect(valid_reg(rd), 1)) {
-                    int32_t offset = decode_imm16(rs, rt);
-                    if (__builtin_expect(gp[rd] != 0, 1)) {  // Hint: usually taken (loop back)
+                    int32_t offset = decode_imm8(rs);
+                    if (__builtin_expect(gp[rd] != 0, 1)) {
                         pc += offset;
                         branched = 1;
                     }
@@ -640,9 +640,9 @@ __global__ void flux_batch_execute(
                 break;
 
             case OP_JLT:
-                // Jump if gp[rd] < 0
+                // Jump if gp[rd] < 0 (int8 offset to match Go VM)
                 if (__builtin_expect(valid_reg(rd), 1)) {
-                    int32_t offset = decode_imm16(rs, rt);
+                    int32_t offset = decode_imm8(rs);
                     if (gp[rd] < 0) {
                         pc += offset;
                         branched = 1;
@@ -653,9 +653,9 @@ __global__ void flux_batch_execute(
                 break;
 
             case OP_JGT:
-                // Jump if gp[rd] > 0
+                // Jump if gp[rd] > 0 (int8 offset to match Go VM)
                 if (__builtin_expect(valid_reg(rd), 1)) {
-                    int32_t offset = decode_imm16(rs, rt);
+                    int32_t offset = decode_imm8(rs);
                     if (gp[rd] > 0) {
                         pc += offset;
                         branched = 1;
